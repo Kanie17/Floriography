@@ -2,14 +2,12 @@ TavernHelper.registerSlashCommand("flori", "花语集变量管理", (args) => {
     let action = args.named_args.action || args.unnamed_args[0];
     let target = args.named_args.target || args.unnamed_args[1];
 
-    let statData = TavernHelper.getVariable("stat_data");
-    if (!statData) statData = {};
-    if (typeof statData === 'string') {
-        try { statData = JSON.parse(statData); } catch(e) { statData = {}; }
+    let flori = TavernHelper.getVariable("花语集");
+    if (!flori) flori = {};
+    if (typeof flori === 'string') {
+        try { flori = JSON.parse(flori); } catch(e) { flori = {}; }
     }
     
-    if (!statData.花语集) statData.花语集 = {};
-    let flori = statData.花语集;
     if (!flori.角色花语) flori.角色花语 = {};
     if (!flori.札记) flori.札记 = [];
 
@@ -43,7 +41,7 @@ TavernHelper.registerSlashCommand("flori", "花语集变量管理", (args) => {
     }
 
     if (updated) {
-        TavernHelper.setVariable("stat_data", statData);
+        TavernHelper.setVariable("花语集", flori);
         return "success";
     }
     return "failed";
