@@ -1,20 +1,44 @@
+/**
+ * 花语集变量结构
+ * 注册指令: /flori
+ */
 TavernHelper.registerSlashCommand("flori", "花语集变量管理", (args) => {
     let action = args.named_args.action || args.unnamed_args[0];
     let target = args.named_args.target || args.unnamed_args[1];
+    let dataB64 = args.named_args.data; // 新增：接收从 UI 传来的完整数据
 
-    let flori = TavernHelper.getVariable("花语集");
-    if (!flori) flori = {};
-    if (typeof flori === 'string') {
-        try { flori = JSON.parse(flori); } catch(e) { flori = {}; }
+    // 获取整个 stat_data
+    let statData = TavernHelper.getVariable("stat_data");
+    if (!statData) statData = {};
+    if (typeof statData === 'string') {
+        try { statData = JSON.parse(statData); } catch(e) { statData = {}; }
     }
     
+    if (!statData.花语集) statData.花语集 = {};
+    let flori = statData.花语集;
     if (!flori.角色花语) flori.角色花语 = {};
     if (!flori.札记) flori.札记 = [];
 
     let updated = false;
 
     if (action === "assign") {
-        if (flori.角色花语[target]) {
+        // 如果 UI 传来了完整数据，直接创建并写入变量
+        if (dataB64) {
+            try {
+                let parsedData = JSON.parse(decodeURIComponent(escape(atob(dataB64))));
+                // 如果之前已经有残存数据，保留其忆笺和拾遗
+                if (flori.角色花语[target]) {
+                    parsedData.忆笺 = flori.角色花语[target].忆笺 || [];
+                    parsedData.拾遗 = flori.角色花语[target].拾遗 || [];
+                }
+                flori.角色花语[target] = parsedData;
+                updated = true;
+            } catch(e) {
+                console.error("解析花语数据失败", e);
+            }
+        } 
+        // 兼容旧逻辑
+        else if (flori.角色花语[target]) {
             flori.角色花语[target].当前阶段 = 0;
             updated = true;
         }
@@ -41,11 +65,12 @@ TavernHelper.registerSlashCommand("flori", "花语集变量管理", (args) => {
     }
 
     if (updated) {
-        TavernHelper.setVariable("花语集", flori);
+        TavernHelper.setVariable("stat_data", statData);
         return "success";
     }
     return "failed";
 }, [
     TavernHelper.makeArgument("action", "操作类型 (assign/remove/journal_add/journal_del)", true),
-    TavernHelper.makeArgument("target", "目标角色名或Base64数据", true)
+    TavernHelper.makeArgument("target", "目标角色名或Base64数据", true),
+    TavernHelper.makeArgument("data", "Base64完整数据(可选)", false)
 ]);
